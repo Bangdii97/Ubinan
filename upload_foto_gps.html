@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perhitungan Ubinan Padi</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: #343a40;
+        }
+        header {
+            background-color: #28a745;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            height: 60px;
+            display: block;
+            margin: 0 auto 15px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 30px auto;
+        }
+        h2 {
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        input[type="file"], input[type="text"], button {
+            width: calc(100% - 22px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        button:hover:enabled {
+            background-color: #218838;
+        }
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 15px;
+            border-radius: 10px;
+            border: 3px solid #28a745;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        .result p strong {
+            color: #28a745;
+        }
+        #preview {
+            max-width: 80%;
+            height: auto;
+            display: none;
+            margin: 15px auto;
+            border: 3px solid #28a745;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="logo.png" alt="Logo" class="logo">
+        <h1>Perhitungan Ubinan Padi</h1>
+    </header>
+
+    <div class="container">
+        <h2>Upload Foto dengan Informasi GPS</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <p id="coordinates">Koordinat: Tidak tersedia</p>
+        <img id="preview" src="#" alt="Preview">
+        <div id="map"></div>
+    </div>
+
+    <div class="container">
+        <h2>Perhitungan Ubinan Padi</h2>
+        <form id="formUbinan">
+            <input type="text" id="panjang" placeholder="Panjang Ubinan (m)" required>
+            <input type="text" id="lebar" placeholder="Lebar Ubinan (m)" required>
+            <input type="text" id="timbangan" placeholder="Timbangan (kg)" required>
+            <button type="submit" id="hitungButton" disabled>Hitung</button>
+        </form>
+        <div id="result" class="result">
+            <p><strong>Hasil Perhitungan:</strong></p>
+            <p><span id="hasilM2"></span> kg/m²</p>
+            <p><span id="hasilBorong"></span> kg/borong</p>
+            <p><span id="hasilHektar"></span> kg/hektar</p>
+        </div>
+    </div>
+
+    <script>
+        let mapInstance;
+        document.getElementById("fileInput").addEventListener("change", function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = document.getElementById("preview");
+                    img.src = e.target.result;
+                    img.style.display = "block";
+                    document.getElementById("hitungButton").disabled = false;
+
+                    // Kompresi gambar sebelum disimpan
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    let max_width = 800; // Ubah sesuai kebutuhan
+                    let max_height = 600; // Ubah sesuai kebutuhan
+
+                    let image = new Image();
+                    image.onload = function() {
+                        let width = image.width;
+                        let height = image.height;
+
+                        if (width > max_width) {
+                            height *= max_width / width;
+                            width = max_width;
+                        }
+                        if (height > max_height) {
+                            width *= max_height / height;
+                            height = max_height;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(image, 0, 0, width, height);
+
+                        let dataURL = canvas.toDataURL('image/jpeg', 0.7);
+                        localStorage.setItem('compressedImage', dataURL);
+                    };
+                    image.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                EXIF.getData(file, function() {
+                    let lat = EXIF.getTag(this, "GPSLatitude");
+                    let lon = EXIF.getTag(this, "GPSLongitude");
+                    if (lat && lon) {
+                        let latRef = EXIF.getTag(this, "GPSLatitudeRef") === "S" ? -1 : 1;
+                        let lonRef = EXIF.getTag(this, "GPSLongitudeRef") === "W" ? -1 : 1;
+                        let latitude = latRef * (lat[0] + lat[1] / 60 + lat[2] / 3600);
+                        let longitude = lonRef * (lon[0] + lon[1] / 60 + lon[2] / 3600);
+                        document.getElementById("coordinates").innerText = `Koordinat: ${latitude}, ${longitude}`;
+                        localStorage.setItem("latitude", latitude);
+                        localStorage.setItem("longitude", longitude);
+
+                        if (!mapInstance) {
+                            mapInstance = L.map('map').setView([latitude, longitude], 15);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+                        }
+                        L.marker([latitude, longitude]).addTo(mapInstance);
+                    }
+                });
+            }
+        });
+
+        document.getElementById("formUbinan").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            localStorage.setItem("timbangan", document.getElementById("timbangan").value);
+
+            let panjang = parseFloat(document.getElementById("panjang").value);
+            let lebar = parseFloat(document.getElementById("lebar").value);
+            let timbangan = parseFloat(document.getElementById("timbangan").value);
+
+            if (!isNaN(panjang) && !isNaN(lebar) && !isNaN(timbangan)) {
+                let hasilM2 = timbangan / (panjang * lebar);
+                let hasilBorong = hasilM2 * 285.71429;
+                let hasilHektar = hasilM2 * 10000;
+
+                localStorage.setItem("hasilM2", hasilM2.toFixed(2));
+                localStorage.setItem("hasilBorong", hasilBorong.toFixed(2));
+                localStorage.setItem("hasilHektar", hasilHektar.toFixed(2));
+
+                localStorage.setItem("penyuluh", localStorage.getItem("penyuluh") || "Tidak diisi");
+                localStorage.setItem("kelompokTani", localStorage.getItem("kelompokTani") || "Tidak diisi");
+                localStorage.setItem("namapetani", localStorage.getItem("namapetani") || "Tidak diisi");
+                localStorage.setItem("desa", localStorage.getItem("desa") || "Tidak diisi");
+                localStorage.setItem("kecamatan", localStorage.getItem("kecamatan") || "Tidak diisi");
+                localStorage.setItem("kabupaten", localStorage.getItem("kabupaten") || "Tidak diisi");
+                localStorage.setItem("provinsi", localStorage.getItem("provinsi") || "Tidak diisi");
+
+                window.location.href = "hasil_ubinan.html";
+            } else {
+                alert("Harap isi semua data dengan angka yang valid!");
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Ubinan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #343a40;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 30px auto;
+        }
+        h2 {
+            color: #28a745;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .result {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .result p {
+            margin-bottom: 10px;
+        }
+        .result strong {
+            font-weight: 700;
+        }
+        hr {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Hasil Ubinan</h2>
+        <div class="result">
+            <p><strong>Titik Koordinat:</strong> <span id="latitude"></span>, <span id="longitude"></span></p>
+            <p><strong>Nama Penyuluh:</strong> <span id="penyuluh"></span></p>
+            <p><strong>Kelompok Tani:</strong> <span id="kelompokTani"></span></p>
+            <p><strong>Nama Petani:</strong> <span id="namapetani"></span></p>
+            <p><strong>Desa:</strong> <span id="desa"></span></p>
+            <p><strong>Kecamatan:</strong> <span id="kecamatan"></span></p>
+            <p><strong>Kabupaten:</strong> <span id="kabupaten"></span></p>
+            <p><strong>Provinsi:</strong> <span id="provinsi"></span></p>
+            <p><strong>Berat Ubinan:</strong> <span id="timbangan"></span> kg</p>
+            <hr>
+            <p><strong>Hasil Ubinan m²:</strong> <span id="hasilM2"></span> kg/m²</p>
+            <p><strong>Hasil Ubinan borong:</strong> <span id="hasilBorong"></span> kg/borong</p>
+            <p><strong>Hasil Ubinan hektar:</strong> <span id="hasilHektar"></span> kg/hektar</p>
+        </div>
+        <button onclick="downloadWord()">Unduh Word</button>
+        <button onclick="window.location.href='index.html'">Kembali</button>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+        2025 Ubinan Padi by. H.S (Balangan)
+        <br>
+        <a href="mailto:hadisaputra78@gmail.com">
+            Kirim Email
+        </a>
+        <br>
+        <a href="https://www.youtube.com/@gubangproduction7219" target="_blank">
+            <img src="logo_youtube.png" alt="YouTube" style="width: 30px; height: 30px;">
+        </a>
+    </div>
+
+    <script>
+        // Ambil data dari localStorage
+        document.getElementById("latitude").innerText = localStorage.getItem("latitude") || "Data tidak ditemukan";
+        document.getElementById("longitude").innerText = localStorage.getItem("longitude") || "Data tidak ditemukan";
+        document.getElementById("penyuluh").innerText = localStorage.getItem("penyuluh") || "Data tidak ditemukan";
+        document.getElementById("kelompokTani").innerText = localStorage.getItem("kelompokTani") || "Data tidak ditemukan";
+        document.getElementById("namapetani").innerText = localStorage.getItem("namapetani") || "Data tidak ditemukan";
+        document.getElementById("desa").innerText = localStorage.getItem("desa") || "Data tidak ditemukan";
+        document.getElementById("kecamatan").innerText = localStorage.getItem("kecamatan") || "Data tidak ditemukan";
+        document.getElementById("kabupaten").innerText = localStorage.getItem("kabupaten") || "Data tidak ditemukan";
+        document.getElementById("provinsi").innerText = localStorage.getItem("provinsi") || "Data tidak ditemukan";
+        document.getElementById("timbangan").innerText = localStorage.getItem("timbangan") 
+
+        // Ambil hasil ubinan
+        document.getElementById("hasilM2").innerText = localStorage.getItem("hasilM2") || "Belum dihitung";
+        document.getElementById("hasilBorong").innerText = localStorage.getItem("hasilBorong") || "Belum dihitung";
+        document.getElementById("hasilHektar").innerText = localStorage.getItem("hasilHektar") || "Belum dihitung";
+
+        // Fungsi untuk mengunduh file Word
+        function downloadWordFile(filename, content) {
+            const link = document.createElement('a');
+            const mimeType = 'application/vnd.ms-word'; // MIME type untuk file .doc
+            link.setAttribute('href', `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`);
+            link.setAttribute('download', filename);
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Fungsi untuk membuat dan mengunduh file Word
+        function downloadWord() {
+            const latitude = localStorage.getItem("latitude") || "Data tidak ditemukan";
+            const longitude = localStorage.getItem("longitude") || "Data tidak ditemukan";
+            const penyuluh = localStorage.getItem("penyuluh") || "Data tidak ditemukan";
+            const kelompokTani = localStorage.getItem("kelompokTani") || "Data tidak ditemukan";
+            const namapetani = localStorage.getItem("namapetani") || "Data tidak ditemukan";
+            const desa = localStorage.getItem("desa") || "Data tidak ditemukan";
+            const kecamatan = localStorage.getItem("kecamatan") || "Data tidak ditemukan";
+            const kabupaten = localStorage.getItem("kabupaten") || "Data tidak ditemukan";
+            const provinsi = localStorage.getItem("provinsi") || "Data tidak ditemukan";
+            const timbangan = localStorage.getItem("timbangan") || "Data tidak ditemukan";
+            const hasilM2 = localStorage.getItem("hasilM2") || "Belum dihitung";
+            const hasilBorong = localStorage.getItem("hasilBorong") || "Belum dihitung";
+            const hasilHektar = localStorage.getItem("hasilHektar") || "Belum dihitung";
+            const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Hasil Ubinan</title>
+</head>
+<body>
+<h1>Hasil Ubinan</h1>
+<p><strong>Titik Koordinat:</strong> ${latitude}, ${longitude}</p>
+<p><strong>Nama Penyuluh:</strong> ${penyuluh}</p>
+<p><strong>Kelompok Tani:</strong> ${kelompokTani}</p>
+<p><strong>Kelompok Tani:</strong> ${namapetani}</p>
+<p><strong>Desa:</strong> ${desa}</p>
+<p><strong>Kecamatan:</strong> ${kecamatan}</p>
+<p><strong>Kabupaten:</strong> ${kabupaten}</p>
+<p><strong>Provinsi:</strong> ${provinsi}</p>
+<p><strong>Berat Ubinan:</strong> ${timbangan} kg</p>
+<hr>
+<p><strong>Hasil Ubinan m²:</strong> ${hasilM2} kg/m²</p>
+<p><strong>Hasil Ubinan borong:</strong> ${hasilBorong} kg/borong</p>
+<p><strong>Hasil Ubinan hektar:</strong> ${hasilHektar} kg/hektar</p>
+</body>
+</html>
+`;
+
+            downloadWordFile('hasil_ubinan.doc', htmlContent);
+        }
+    </script>
+</body>
+</html>
